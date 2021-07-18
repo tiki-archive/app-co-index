@@ -36,4 +36,20 @@ public class ConfigProperties {
     public void setJwtPublicKey(String jwtPublicKey) {
         this.jwtPublicKey = jwtPublicKey;
     }
+
+    public String getApiKeyHibp() {
+        return apiKeyHibp;
+    }
+
+    public void setApiKeyHibp(String apiKeyHibp) {
+        this.apiKeyHibp = apiKeyHibp;
+    }
+
+    public String getApiKeyBigPicture() {
+        return apiKeyBigPicture;
+    }
+
+    public void setApiKeyBigPicture(String apiKeyBigPicture) {
+        this.apiKeyBigPicture = apiKeyBigPicture;
+    }
 }
