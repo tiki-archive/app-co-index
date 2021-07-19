@@ -17,12 +17,14 @@ public class HibpConfig {
     @Bean
     public HibpService hibpService(
             @Autowired ConfigProperties configProperties,
-            @Autowired RestTemplateBuilder restTemplateBuilder){
+            @Autowired RestTemplateBuilder restTemplateBuilder,
+            @Autowired HibpRepository hibpRepository){
         return new HibpService(
                 restTemplateBuilder
                         .rootUri(ROOT_URI)
                         .defaultHeader("hibp-api-key", configProperties.getApiKeyHibp())
-                        .build()
+                        .build(),
+                hibpRepository
         );
     }
 }

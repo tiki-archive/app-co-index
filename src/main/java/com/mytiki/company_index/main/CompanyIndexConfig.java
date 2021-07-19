@@ -3,7 +3,7 @@
  * MIT license. See LICENSE file in root directory.
  */
 
-package com.mytiki.company_index;
+package com.mytiki.company_index.main;
 
 import com.mytiki.common.exception.ApiExceptionHandlerDefault;
 import com.mytiki.common.reply.ApiReplyHandlerDefault;

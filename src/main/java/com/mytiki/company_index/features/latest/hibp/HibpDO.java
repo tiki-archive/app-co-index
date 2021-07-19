@@ -11,7 +11,7 @@ import java.util.List;
 @Entity
 @Table(name = "hibp")
 public class HibpDO implements Serializable {
-    private Long id;
+    private String name;
     private String domain;
     private ZonedDateTime breachedOn;
     private ZonedDateTime cachedOn;
@@ -24,14 +24,13 @@ public class HibpDO implements Serializable {
     private BigDecimal comboScore;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    public Long getId() {
-        return id;
+    @Column(name = "name")
+    public String getName() {
+        return name;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Column(name = "domain")
