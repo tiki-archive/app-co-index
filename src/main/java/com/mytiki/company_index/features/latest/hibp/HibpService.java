@@ -34,8 +34,8 @@ public class HibpService {
     @Scheduled(fixedDelay = 1000*60*60) //1hrs
     public void index(){
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
-        Optional<HibpDO> latest = hibpRepository.findFirstByOrderByCachedOnDesc();
-        if(latest.isEmpty() || latest.get().getCachedOn().isBefore(now.minusDays(1))) {
+        Optional<HibpDO> latestOptional = hibpRepository.findFirstByOrderByCachedOnDesc();
+        if(latestOptional.isEmpty() || latestOptional.get().getCachedOn().isBefore(now.minusDays(1))) {
             ResponseEntity<List<HibpAO>> rsp = restTemplate.exchange(
                     "/breaches",
                     HttpMethod.GET,
@@ -49,6 +49,10 @@ public class HibpService {
                 hibpRepository.saveAll(doList);
             }
         }
+    }
+
+    public List<HibpDO> findByDomain(String domain){
+        return hibpRepository.findByDomain(domain);
     }
 
     private List<String> createTypeList(HibpAO hibpAO){
@@ -118,4 +122,6 @@ public class HibpService {
         if(score.compareTo(cap) > 0 ) score = cap;
         return score.divide(cap, 5, RoundingMode.HALF_UP);
     }
+
+    //TODO add a time factor to the score.
 }

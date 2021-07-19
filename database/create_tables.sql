@@ -20,3 +20,28 @@ CREATE TABLE IF NOT EXISTS hibp(
     combo_score NUMERIC(8,5) NOT NULL,
     PRIMARY KEY(name)
 );
+
+-- -----------------------------------------------------------------------
+-- COMPANY
+-- -----------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS company(
+    id BIGSERIAL NOT NULL,
+    domain TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT,
+    logo TEXT,
+    url TEXT,
+    address TEXT,
+    phone TEXT,
+    sector TEXT,
+    industry TEXT,
+    sub_industry TEXT,
+    tag_list TEXT,
+    facebook_handle TEXT,
+    twitter_handle TEXT,
+    linkedin_handle TEXT,
+    sensitivity_score NUMERIC(8,5) NOT NULL,
+    cached_on_utc TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY(id)
+);
+

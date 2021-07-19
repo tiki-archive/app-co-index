@@ -23,6 +23,7 @@ public class HibpConfig {
                 restTemplateBuilder
                         .rootUri(ROOT_URI)
                         .defaultHeader("hibp-api-key", configProperties.getApiKeyHibp())
+                        .defaultHeader("user-agent", "TIKI")
                         .build(),
                 hibpRepository
         );
