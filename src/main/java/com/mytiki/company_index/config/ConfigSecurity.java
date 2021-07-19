@@ -99,8 +99,9 @@ public class ConfigSecurity extends WebSecurityConfigurerAdapter {
                 )
                 .authorizeRequests(authorize -> authorize
                         .antMatchers(
-                                HttpMethod.GET, ApiConstants.HEALTH_ROUTE, "/api/latest/company/**"
+                                HttpMethod.GET, ApiConstants.HEALTH_ROUTE
                         ).permitAll()
+                        .antMatchers("/api/latest/**").permitAll()
                         .anyRequest()
                         .authenticated()
                 );

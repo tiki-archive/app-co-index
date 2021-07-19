@@ -45,3 +45,14 @@ CREATE TABLE IF NOT EXISTS company(
     PRIMARY KEY(id)
 );
 
+-- -----------------------------------------------------------------------
+-- FLAGGED
+-- -----------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS flagged(
+    id BIGSERIAL NOT NULL,
+    source TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    created_on_utc TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY(id)
+);

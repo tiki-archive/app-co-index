@@ -1,6 +1,7 @@
 package com.mytiki.company_index.features.latest.hibp;
 
 import com.mytiki.company_index.config.ConfigProperties;
+import com.mytiki.company_index.features.latest.flagged.FlaggedService;
 import com.mytiki.company_index.utilities.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -18,14 +19,16 @@ public class HibpConfig {
     public HibpService hibpService(
             @Autowired ConfigProperties configProperties,
             @Autowired RestTemplateBuilder restTemplateBuilder,
-            @Autowired HibpRepository hibpRepository){
+            @Autowired HibpRepository hibpRepository,
+            @Autowired FlaggedService flaggedService){
         return new HibpService(
                 restTemplateBuilder
                         .rootUri(ROOT_URI)
                         .defaultHeader("hibp-api-key", configProperties.getApiKeyHibp())
                         .defaultHeader("user-agent", "TIKI")
                         .build(),
-                hibpRepository
+                hibpRepository,
+                flaggedService
         );
     }
 }

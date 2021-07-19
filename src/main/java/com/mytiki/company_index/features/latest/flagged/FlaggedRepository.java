@@ -1,4 +1,6 @@
 package com.mytiki.company_index.features.latest.flagged;
 
-public interface FlaggedRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface FlaggedRepository extends JpaRepository<FlaggedDO, Long> {
 }

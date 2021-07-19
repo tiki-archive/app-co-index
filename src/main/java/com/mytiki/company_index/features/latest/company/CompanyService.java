@@ -1,8 +1,12 @@
 package com.mytiki.company_index.features.latest.company;
 
+import com.mytiki.common.exception.ApiExceptionBuilder;
+import com.mytiki.common.reply.ApiReplyAOMessageBuilder;
 import com.mytiki.company_index.features.latest.big_picture.BigPictureAO;
+import com.mytiki.company_index.features.latest.big_picture.BigPictureException;
 import com.mytiki.company_index.features.latest.big_picture.BigPictureService;
 import com.mytiki.company_index.features.latest.hibp.HibpService;
+import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -11,7 +15,6 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 
 public class CompanyService {
-
     private final CompanyRepository companyRepository;
     private final BigPictureService bigPictureService;
     private final HibpService hibpService;
@@ -30,26 +33,46 @@ public class CompanyService {
         Optional<CompanyDO> companyOptional = companyRepository.findByDomain(domain);
         if (companyOptional.isEmpty() ||
                 companyOptional.get().getCachedOn().isBefore(now.minusDays(30))) {
-            return cache(companyOptional.isEmpty() ? new CompanyDO() : companyOptional.get(), domain, now);
+            try {
+                BigPictureAO bigPictureAO = bigPictureService.find(domain);
+                CompanyDO cacheDO = toDO(companyOptional.isEmpty() ?
+                        new CompanyDO() : companyOptional.get(),
+                        bigPictureAO);
+                cacheDO.setCachedOn(now);
+                cacheDO.setDomain(domain);
+                cacheDO = companyRepository.save(cacheDO);
+                cacheDO.setBreaches(hibpService.findByDomain(domain));
+                return toAO(cacheDO);
+            }catch (BigPictureException ex){
+                throw new ApiExceptionBuilder()
+                        .httpStatus(ex.getStatus())
+                        .messages(new ApiReplyAOMessageBuilder()
+                                .message(ex.getStatus().equals(HttpStatus.ACCEPTED) ?
+                                        "Indexing. Try again later (30m?)" :
+                                        ex.getStatus().getReasonPhrase())
+                                .properties("domain", domain)
+                                .build())
+                        .build();
+            }
         }else return toAO(companyOptional.get());
         //TODO calc final security score
     }
 
-    private CompanyAO cache(CompanyDO companyDO, String domain, ZonedDateTime cachedOn){
-        BigPictureAO bigPictureAO = bigPictureService.find(domain);
-        if(bigPictureAO != null){
-            CompanyDO cacheDO = toDO(companyDO, bigPictureAO);
-            cacheDO.setCachedOn(cachedOn);
-            cacheDO = companyRepository.save(cacheDO);
-            cacheDO.setBreaches(hibpService.findByDomain(domain));
-            return toAO(cacheDO);
-        } //TODO what do here
-        return null;
+    public void update(BigPictureAO bigPictureAO) {
+        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+        Optional<CompanyDO> companyOptional = companyRepository.findByDomain(bigPictureAO.getDomain());
+        if (companyOptional.isEmpty() ||
+                companyOptional.get().getCachedOn().isBefore(now.minusDays(30))) {
+            CompanyDO cacheDO = toDO(companyOptional.isEmpty() ?
+                            new CompanyDO() : companyOptional.get(),
+                    bigPictureAO);
+            cacheDO.setCachedOn(now);
+            companyRepository.save(cacheDO);
+        }
     }
 
     private CompanyDO toDO(CompanyDO company, BigPictureAO bigPictureAO){
         company.setAddress(bigPictureAO.getLocation());
-        company.setDomain(bigPictureAO.getDomain());
         company.setDescription(bigPictureAO.getDescription());
         company.setName(bigPictureAO.getName());
         company.setLogo(bigPictureAO.getLogo());

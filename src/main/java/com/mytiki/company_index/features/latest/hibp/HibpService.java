@@ -1,5 +1,6 @@
 package com.mytiki.company_index.features.latest.hibp;
 
+import com.mytiki.company_index.features.latest.flagged.FlaggedService;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -25,13 +26,17 @@ public class HibpService {
 
     private final RestTemplate restTemplate;
     private final HibpRepository hibpRepository;
+    private final FlaggedService flaggedService;
 
-    public HibpService(RestTemplate restTemplate, HibpRepository hibpRepository) {
+    public HibpService(RestTemplate restTemplate, HibpRepository hibpRepository,
+                       FlaggedService flaggedService) {
         this.restTemplate = restTemplate;
         this.hibpRepository = hibpRepository;
+        this.flaggedService = flaggedService;
     }
 
-    @Scheduled(fixedDelay = 1000*60*60) //1hrs
+    //@Scheduled(fixedDelay = 1000*60*60) //1hrs
+    @Scheduled(fixedDelay = 1000*10)
     public void index(){
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
         Optional<HibpDO> latestOptional = hibpRepository.findFirstByOrderByCachedOnDesc();
@@ -42,6 +47,8 @@ public class HibpService {
                     null,
                     new ParameterizedTypeReference<List<HibpAO>>() {});
             if (rsp.getStatusCode().is2xxSuccessful() && rsp.getBody() != null) {
+                flagEmptyClasses(rsp.getBody());
+                flagUnknownClass(rsp.getBody());
                 List<HibpDO> doList = rsp.getBody().stream()
                         .filter(hibpAO -> (hibpAO.getName() != null && hibpAO.getDomain() != null))
                         .map(hibpAO -> map(hibpAO, now))
@@ -53,6 +60,28 @@ public class HibpService {
 
     public List<HibpDO> findByDomain(String domain){
         return hibpRepository.findByDomain(domain);
+    }
+
+    private void flagUnknownClass(List<HibpAO> list){
+        List<HibpAO> unknownClasses = list.stream()
+                .filter(hibpAO -> {
+                    for(String dataClass : hibpAO.getDataClasses()){
+                        if(HibpWeight.forLookup(dataClass) == null)
+                            return true;
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+        unknownClasses.forEach(hibpAO -> flaggedService.save(
+                "HIBP", hibpAO.getName(), "unknown class"));
+    }
+
+    private void flagEmptyClasses(List<HibpAO> list){
+        List<HibpAO> emptyClasses = list.stream()
+                .filter(hibpAO -> hibpAO.getDataClasses().size() == 0)
+                .collect(Collectors.toList());
+        emptyClasses.forEach(hibpAO -> flaggedService.save(
+                "HIBP", hibpAO.getName(), "no classes"));
     }
 
     private List<String> createTypeList(HibpAO hibpAO){
