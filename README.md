@@ -1,1 +1,1 @@
-# security-score
+# company-index
