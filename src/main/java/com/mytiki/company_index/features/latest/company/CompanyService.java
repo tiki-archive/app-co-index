@@ -5,6 +5,7 @@ import com.mytiki.common.reply.ApiReplyAOMessageBuilder;
 import com.mytiki.company_index.features.latest.big_picture.BigPictureAO;
 import com.mytiki.company_index.features.latest.big_picture.BigPictureException;
 import com.mytiki.company_index.features.latest.big_picture.BigPictureService;
+import com.mytiki.company_index.features.latest.hibp.HibpDO;
 import com.mytiki.company_index.features.latest.hibp.HibpService;
 import org.springframework.http.HttpStatus;
 
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public class CompanyService {
@@ -88,8 +90,8 @@ public class CompanyService {
         company.setSubIndustry(bigPictureAO.getCategory().getSubIndustry());
         company.setTags(bigPictureAO.getTags());
 
-        //TODO FIX
-        company.setSensitivityScore(BigDecimal.valueOf(0).setScale(5, RoundingMode.HALF_UP));
+        company.setSensitivityScore(bigPictureService.calcScore(
+                company.getSector(), company.getIndustry(), company.getSubIndustry(), company.getTags()));
         return company;
     }
 
@@ -114,11 +116,10 @@ public class CompanyService {
         social.setLinkedin(companyDO.getLinkedin());
         social.setTwitter(companyDO.getTwitter());
 
-        //TODO FIX
         CompanyAOScore score = new CompanyAOScore();
         score.setSensitivityScore(companyDO.getSensitivityScore());
-        score.setBreachScore(BigDecimal.valueOf(0).setScale(5, RoundingMode.HALF_UP));
-        score.setSecurityScore(BigDecimal.valueOf(0).setScale(5, RoundingMode.HALF_UP));
+        score.setBreachScore(consolidateBreachScore(companyDO.getBreaches()));
+        score.setSecurityScore(calcSecurityScore(score.getBreachScore(), score.getSensitivityScore()));
 
         CompanyAO companyAO = new CompanyAO();
         companyAO.setAbout(about);
@@ -126,5 +127,23 @@ public class CompanyService {
         companyAO.setSocial(social);
         companyAO.setScore(score);
         return companyAO;
+    }
+
+    private BigDecimal consolidateBreachScore(List<HibpDO> breaches){
+        BigDecimal score = BigDecimal.valueOf(0);
+        for(HibpDO hibpDO : breaches){
+            score = score.add(hibpDO.getComboScore());
+        }
+        if(score.compareTo(BigDecimal.valueOf(1)) > 0 ) score = BigDecimal.valueOf(1);
+        return score.setScale(5, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calcSecurityScore(BigDecimal breachScore, BigDecimal sensitivityScore){
+        BigDecimal breachWeight = BigDecimal.valueOf(0.65);
+        BigDecimal sensitivityWeight = BigDecimal.valueOf(0.35);
+        return breachScore
+                .multiply(breachWeight)
+                .add(sensitivityScore.multiply(sensitivityWeight))
+                .setScale(5, RoundingMode.HALF_UP);
     }
 }

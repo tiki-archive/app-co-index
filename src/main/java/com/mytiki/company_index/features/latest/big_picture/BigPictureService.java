@@ -8,6 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.List;
 import java.util.Objects;
 
 public class BigPictureService {
@@ -57,5 +60,35 @@ public class BigPictureService {
             flaggedService.save("BigPicture", bigPictureAO.getDomain(), "No Sector");
         else if(bigPictureAO.getCategory().getIndustry() == null)
             flaggedService.save("BigPicture", bigPictureAO.getDomain(), "No Industry");
+    }
+
+    private BigDecimal calcTagScore(List<String> tags){
+        BigDecimal score = BigDecimal.valueOf(1);
+        for(String s : tags){
+            BigPictureWeight weight = BigPictureWeight.forLookup(s);
+            if(weight != null && BigDecimal.valueOf(weight.getWeight()).compareTo(score) > 0)
+                score = BigDecimal.valueOf(weight.getWeight());
+        }
+        return score.setScale(5, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calcCategoryScore(String sector, String industry, String subIndustry){
+        BigDecimal score = BigDecimal.valueOf(1);
+        BigPictureWeight subIndustryWeight = BigPictureWeight.forLookup(subIndustry);
+        BigPictureWeight industryWeight = BigPictureWeight.forLookup(industry);
+        BigPictureWeight sectorWeight = BigPictureWeight.forLookup(sector);
+
+        if(subIndustryWeight != null) score = BigDecimal.valueOf(subIndustryWeight.getWeight());
+        else if(industryWeight != null) score = BigDecimal.valueOf(industryWeight.getWeight());
+        else if(sectorWeight != null) score = BigDecimal.valueOf(sectorWeight.getWeight());
+
+        return score.setScale(5, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal calcScore(String sector, String industry, String subIndustry, List<String> tags){
+        BigDecimal tagScore = calcTagScore(tags);
+        BigDecimal categoryScore = calcCategoryScore(sector, industry, subIndustry);
+        BigDecimal highest = tagScore.compareTo(categoryScore) > 0 ? tagScore : categoryScore;
+        return highest.divide(BigDecimal.valueOf(10), 5, RoundingMode.HALF_UP);
     }
 }
