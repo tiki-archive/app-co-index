@@ -68,6 +68,7 @@ public class CompanyService {
             CompanyDO cacheDO = toDO(companyOptional.isEmpty() ?
                             new CompanyDO() : companyOptional.get(),
                     bigPictureAO);
+            cacheDO.setDomain(bigPictureAO.getDomain());
             cacheDO.setCachedOn(now);
             companyRepository.save(cacheDO);
         }
