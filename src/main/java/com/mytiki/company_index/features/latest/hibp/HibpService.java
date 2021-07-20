@@ -35,8 +35,7 @@ public class HibpService {
         this.flaggedService = flaggedService;
     }
 
-    //@Scheduled(fixedDelay = 1000*60*60) //1hrs
-    @Scheduled(fixedDelay = 1000*10)
+    @Scheduled(fixedDelay = 1000*60*60) //1hrs
     public void index(){
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
         Optional<HibpDO> latestOptional = hibpRepository.findFirstByOrderByCachedOnDesc();
